@@ -40,13 +40,14 @@ class CSHGroup:
 
         ret = []
         for val in res:
-            val = val[1]['uid'][0]
-            try:
-                ret.append(val.decode('utf-8'))
-            except UnicodeDecodeError:
-                ret.append(val)
-            except KeyError:
-                continue
+            if 'uid' in val[1]:
+                val = val[1]['uid'][0]
+                try:
+                    ret.append(val.decode('utf-8'))
+                except UnicodeDecodeError:
+                    ret.append(val)
+                except KeyError:
+                    continue
 
         return [CSHMember(self.__lib__,
                           result,
