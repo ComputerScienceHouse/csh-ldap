@@ -30,8 +30,9 @@ class CSHGroup:
             raise KeyError("Invalid Search Name")
 
     @reconnect_on_fail
-    def get_members(self, uids=False):
-        """Return all members in the group as CSHMember objects"""
+    def get_member_uids(self):
+        """Return the uids of all members in the group"""
+
         res = self.__con__.search_s(
             self.__ldap_base_dn__,
             ldap.SCOPE_SUBTREE,
@@ -40,22 +41,30 @@ class CSHGroup:
 
         ret = []
         for val in res:
-            if 'uid' in val[1]:
-                val = val[1]['uid'][0]
-                try:
-                    ret.append(val.decode('utf-8'))
-                except UnicodeDecodeError:
-                    ret.append(val)
-                except KeyError:
-                    continue
+            if 'uid' not in val[1]:
+                continue
 
-        if uids:
-            return ret
+            val = val[1]['uid'][0]
+            try:
+                ret.append(val.decode('utf-8'))
+            except UnicodeDecodeError:
+                ret.append(val)
+            except KeyError:
+                continue
+
+        return ret
+
+
+    @reconnect_on_fail
+    def get_members(self):
+        """Return all members in the group as CSHMember objects"""
+
+        uids = self.get_member_uids()
 
         return [CSHMember(self.__lib__,
                           result,
                           uid=True)
-                for result in ret]
+                for result in uids]
 
     @reconnect_on_fail
     def check_member(self, member, dn=False):
