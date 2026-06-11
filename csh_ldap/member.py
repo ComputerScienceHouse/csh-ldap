@@ -139,7 +139,7 @@ class CSHMember:
         if value is None:
             mod = (ldap_mod, key, None)
         else:
-            mod = (ldap_mod, key, value.encode('ascii'))
+            mod = (ldap_mod, key, value.encode('utf-8'))
 
         if self.__lib__.__batch_mods__:
             self.__lib__.enqueue_mod(self.__dn__, mod)
