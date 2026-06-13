@@ -149,6 +149,97 @@ class CSHLDAP:
                           True)
                 for dn in ret]
 
+    def get_query_for_groups(self, groups = [], excluded_groups = []):
+        """Returns the ldap query string to get members in groups but not in others
+
+        Argumenets:
+        groups -- the groups members must be a member of
+        excluded_groups -- the groups members cannot be a part of
+        """
+
+        group_dns = [f"(memberOf=cn={group},cn=groups,cn=accounts,dc=csh,dc=rit,dc=edu)" for group in groups]
+        excluded_group_dns = [f"(memberOf=cn={group},cn=groups,cn=accounts,dc=csh,dc=rit,dc=edu)" for group in excluded_groups]
+
+        query = ""
+
+        for group in group_dns:
+            if query == "":
+                query = group
+                continue
+
+            query = f"(&{query}{group})"
+
+        for group in excluded_group_dns:
+            group = f"(!{group})"
+            if query == "":
+                query = group
+                continue
+
+            query = f"(&{query}{group})"
+
+        return query
+
+    def get_group_member_attributes(self, groups = [], excluded_groups = [], attributes = ['uid']):
+        """Returns a list of dicts containing all the attributes requested in the groups listed in groups, but not in exlcuded_groups
+
+        Arguements:
+        groups -- the groups members must be a member of
+        excluded_groups -- the groups members cannot be a part of
+        attributues -- the ldap attributes to return
+        """
+
+        query_result = self.__con__.search_s(
+            "dc=csh,dc=rit,dc=edu",
+            ldap.SCOPE_SUBTREE,
+            self.get_query_for_groups(groups=groups, excluded_groups=excluded_groups),
+            attributes)
+
+        # the rest of this could be one giant list compression but I don't hate you that much so I chose not to
+
+        # filter out subgroups, probably the second check all we need 
+        # but if we used just the second one but the first one was empty that would probably be confusing?
+        byte_result = [member[1] for member in query_result if not member[1] == {} and "cn=users" in member[0]]
+
+        result = []
+
+        for byte_member in byte_result:
+            # decoding the byte strings
+            result.append({key: value[0].decode('utf-8') for (key, value) in byte_member.items()})
+
+        return result
+
+    def get_group_member_uids(self, groups = [], excluded_groups = []):
+        """Get a list of member uids in a group
+
+        Arguements:
+        groups -- the groups members must be a member of
+        excluded_groups -- the groups members cannot be a part of
+        """
+
+        query_result = self.__con__.search_s(
+            "dc=csh,dc=rit,dc=edu",
+            ldap.SCOPE_SUBTREE,
+            self.get_query_for_groups(groups=groups, excluded_groups=excluded_groups),
+            ['uid'])
+
+        return [member[1]['uid'][0].decode('utf-8') for member in query_result if not member[1] == {} and "cn=users" in member[0]]
+
+    def get_group_member_uuids(self, groups = [], excluded_groups = []):
+        """Get a list of member uuids in a group (ipaUniqueId)
+
+        Arguements:
+        groups -- the groups members must be a member of
+        excluded_groups -- the groups members cannot be a part of
+        """
+
+        query_result = self.__con__.search_s(
+            "dc=csh,dc=rit,dc=edu",
+            ldap.SCOPE_SUBTREE,
+            self.get_query_for_groups(groups=groups, excluded_groups=excluded_groups),
+            ['ipaUniqueId'])
+
+        return [member[1]['ipaUniqueId'][0].decode('utf-8') for member in query_result if not member[1] == {} and "cn=users" in member[0]]
+
     def enqueue_mod(self, dn, mod):
         """Enqueue a LDAP modification.
 
@@ -187,3 +278,4 @@ class CSHLDAP:
                 continue
             self.__mod_queue__[dn] = None
         self.__pending_mod_dn__ = []
+
