@@ -40,6 +40,10 @@ liam = instance.get_member_slackuid(slack_uid)
 # Get group by cn
 rtp = instance.get_group('rtp')
 
+# get group member uids 
+rtp = instance.get_group('rtp').get_member_uids()
+# returns ['spaced', ...]
+
 # Get cn of member
 print(liam.cn)
 
