@@ -44,6 +44,34 @@ rtp = instance.get_group('rtp')
 rtp = instance.get_group('rtp').get_member_uids()
 # returns ['spaced', ...]
 
+# get group member uids (other way)
+rtp = instance.get_group_member_uids(groups=["rtp"])
+
+# get uids of members in two (or more) groups and not in groups
+fancy = instance.get_group_member_uids(groups=["rtp", "onfloor"], excluded=["eboard-opcomm"])
+
+# get uuids of members in two (or more) groups and not in groups
+# that's right! ipaUniqueId
+fancy = instance.get_group_member_uuids(groups=["rtp", "onfloor"], excluded=["eboard-opcomm"])
+
+# get other miscellaneous attributes of members in group
+# look how rich drink admins are (admin abuse!!!)
+admin_abuse = instance.get_group_member_attributes(group=["drink"], attributes=["uid", "drinkBalance"])
+# returns dicts for each member
+"""
+I wonder what happened here
+[
+{
+    'uid': 'cole',
+    'drinkBalance': '996246'
+},
+{
+    'uid': 'zxcv',
+    'drinkBalance': '3847173'
+}
+]
+"""
+
 # Get cn of member
 print(liam.cn)
 
